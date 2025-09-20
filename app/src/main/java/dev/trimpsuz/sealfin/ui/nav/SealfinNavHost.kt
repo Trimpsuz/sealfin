@@ -32,6 +32,7 @@ import dev.trimpsuz.sealfin.ui.screens.SettingsScreen
 import dev.trimpsuz.sealfin.ui.screens.libraries.LibrariesScreen
 import dev.trimpsuz.sealfin.ui.screens.libraries.LibraryDetailsScreen
 import dev.trimpsuz.sealfin.ui.viewmodel.AuthViewModel
+import dev.trimpsuz.sealfin.utils.navigateOrPopBackStack
 
 sealed class BottomNavItem(val route: String, val icon: ImageVector, val label: String) {
     object Home : BottomNavItem("home", Icons.Filled.Home, "Home")
@@ -75,23 +76,14 @@ fun SealfinNavHost() {
                                     if (currentRoute?.startsWith(BottomNavItem.Libraries.route) == true &&
                                         currentRoute != BottomNavItem.Libraries.route
                                     ) {
-                                        navController.popBackStack(
-                                            BottomNavItem.Libraries.route,
-                                            inclusive = false
+                                        navController.navigateOrPopBackStack(
+                                            BottomNavItem.Libraries.route
                                         )
                                     } else {
-                                        navController.navigate(BottomNavItem.Libraries.route) {
-                                            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                                            launchSingleTop = true
-                                            restoreState = true
-                                        }
+                                        navController.navigateOrPopBackStack(item.route)
                                     }
                                 } else {
-                                    navController.navigate(item.route) {
-                                        popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                                        launchSingleTop = true
-                                        restoreState = true
-                                    }
+                                    navController.navigateOrPopBackStack(item.route)
                                 }
                             }
                         )
@@ -102,7 +94,7 @@ fun SealfinNavHost() {
     ) { padding ->
         NavHost(navController = navController, startDestination = startDestination, modifier = Modifier.padding(padding)) {
             composable("login") {
-                LoginScreen(onLoginSuccess = { navController.navigate(BottomNavItem.Home.route)  { popUpTo("login") { inclusive = true } } })
+                LoginScreen(onLoginSuccess = { navController.navigate(BottomNavItem.Home.route) { popUpTo("login") { inclusive = true } } })
             }
             composable("server_selector") {
                 ServerSelectorScreen(
@@ -110,7 +102,11 @@ fun SealfinNavHost() {
                     onServerSelected = { navController.navigate(BottomNavItem.Home.route) { popUpTo("server_selector") { inclusive = true } } }
                 )
             }
-            composable(BottomNavItem.Home.route) { HomeScreen() }
+            composable(BottomNavItem.Home.route) { HomeScreen(
+                onLibrarySelected = { libraryId, libraryName ->
+                    navController.navigate("library/$libraryId/$libraryName")
+                }
+            ) }
             composable(BottomNavItem.Libraries.route) {
                 LibrariesScreen(
                     onLibrarySelected = { libraryId, libraryName ->
