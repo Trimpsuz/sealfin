@@ -19,20 +19,23 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import dev.trimpsuz.sealfin.ui.screens.FavoritesScreen
 import dev.trimpsuz.sealfin.ui.screens.HomeScreen
-import dev.trimpsuz.sealfin.ui.screens.LibrariesScreen
 import dev.trimpsuz.sealfin.ui.screens.LoginScreen
 import dev.trimpsuz.sealfin.ui.screens.SettingsScreen
+import dev.trimpsuz.sealfin.ui.screens.libraries.LibrariesScreen
+import dev.trimpsuz.sealfin.ui.screens.libraries.LibraryDetailsScreen
 import dev.trimpsuz.sealfin.ui.viewmodel.AuthViewModel
 
 sealed class BottomNavItem(val route: String, val icon: ImageVector, val label: String) {
     object Home : BottomNavItem("home", Icons.Filled.Home, "Home")
-    object Libraries : BottomNavItem("libraries", Icons.AutoMirrored.Filled.MenuBook, "Libraries")
+    object Libraries : BottomNavItem("library", Icons.AutoMirrored.Filled.MenuBook, "Libraries")
     object Favorites : BottomNavItem("favorites", Icons.Filled.Favorite, "Favorites")
     object Settings : BottomNavItem("settings", Icons.Filled.Settings, "Settings")
 }
@@ -66,12 +69,29 @@ fun SealfinNavHost() {
                         NavigationBarItem(
                             icon = { Icon(item.icon, contentDescription = item.label) },
                             label = { Text(item.label) },
-                            selected = currentRoute == item.route,
+                            selected = currentRoute?.startsWith(item.route) == true,
                             onClick = {
-                                navController.navigate(item.route) {
-                                    popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                                    launchSingleTop = true
-                                    restoreState = true
+                                if (item == BottomNavItem.Libraries) {
+                                    if (currentRoute?.startsWith(BottomNavItem.Libraries.route) == true &&
+                                        currentRoute != BottomNavItem.Libraries.route
+                                    ) {
+                                        navController.popBackStack(
+                                            BottomNavItem.Libraries.route,
+                                            inclusive = false
+                                        )
+                                    } else {
+                                        navController.navigate(BottomNavItem.Libraries.route) {
+                                            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                                            launchSingleTop = true
+                                            restoreState = true
+                                        }
+                                    }
+                                } else {
+                                    navController.navigate(item.route) {
+                                        popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                                        launchSingleTop = true
+                                        restoreState = true
+                                    }
                                 }
                             }
                         )
@@ -91,7 +111,27 @@ fun SealfinNavHost() {
                 )
             }
             composable(BottomNavItem.Home.route) { HomeScreen() }
-            composable(BottomNavItem.Libraries.route) { LibrariesScreen() }
+            composable(BottomNavItem.Libraries.route) {
+                LibrariesScreen(
+                    onLibrarySelected = { libraryId, libraryName ->
+                        navController.navigate("library/$libraryId/$libraryName")
+                    }
+                )
+            }
+            composable(
+                route = "library/{libraryId}/{libraryName}",
+                arguments = listOf(
+                    navArgument("libraryId") { type = NavType.StringType },
+                    navArgument("libraryName") { type = NavType.StringType }
+                )
+            ) { backStackEntry ->
+                val libraryId = backStackEntry.arguments?.getString("libraryId")!!
+                val libraryName = backStackEntry.arguments?.getString("libraryName")!!
+                LibraryDetailsScreen(libraryId,
+                    libraryName,
+                    onBack = { navController.popBackStack()}
+                )
+            }
             composable(BottomNavItem.Favorites.route) { FavoritesScreen() }
             composable(BottomNavItem.Settings.route) {
                 SettingsScreen(

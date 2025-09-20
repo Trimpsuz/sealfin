@@ -26,7 +26,7 @@ class DataStoreManager @Inject constructor(
 ) {
 
     companion object {
-        private val KEY_SERVERS = stringPreferencesKey("servers") // JSON list
+        private val KEY_SERVERS = stringPreferencesKey("servers")
         private val KEY_ACTIVE_SERVER_ID = stringPreferencesKey("active_server_id")
         val KEY_THEME = stringPreferencesKey("theme")
     }
