@@ -17,6 +17,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Star
@@ -24,6 +25,7 @@ import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
@@ -44,6 +46,7 @@ import coil.compose.AsyncImage
 import dev.trimpsuz.sealfin.data.Server
 import org.jellyfin.sdk.model.api.BaseItemDto
 import java.time.format.DateTimeFormatter
+import java.util.UUID
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -51,7 +54,9 @@ fun EpisodePopup(
     episode: BaseItemDto,
     seriesName: String,
     onDismiss: () -> Unit,
-    activeServer: Server?
+    activeServer: Server?,
+    updatePlayed: (UUID, Boolean) -> Unit,
+    updateFavorite: (UUID, Boolean) -> Unit
 ) {
     val onSurfaceColor = MaterialTheme.colorScheme.onSurface
 
@@ -165,12 +170,24 @@ fun EpisodePopup(
                     Text("Play")
                 }
                 Spacer(Modifier.width(8.dp))
-                OutlinedButton(onClick = { /* TODO mark completed */ }) {
-                    Icon(Icons.Default.Check, contentDescription = null)
+                OutlinedButton(onClick = {
+                    updatePlayed(episode.id, episode.userData?.played == true)
+                }) {
+                    Icon(
+                        Icons.Default.Check,
+                        contentDescription = null,
+                        tint = if (episode.userData?.played == true) Color(0xffd14747) else LocalContentColor.current,
+                    )
                 }
                 Spacer(Modifier.width(8.dp))
-                OutlinedButton(onClick = { /* TODO like */ }) {
-                    Icon(Icons.Default.FavoriteBorder, contentDescription = null)
+                OutlinedButton(onClick = {
+                    updateFavorite(episode.id, episode.userData?.isFavorite == true)
+                }) {
+                    Icon(
+                        if (episode.userData?.isFavorite == true) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                        contentDescription = null,
+                        tint = if (episode.userData?.isFavorite == true) Color(0xffd14747) else LocalContentColor.current,
+                    )
                 }
             }
 

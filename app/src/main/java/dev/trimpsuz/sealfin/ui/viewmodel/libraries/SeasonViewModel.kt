@@ -13,12 +13,17 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.jellyfin.sdk.api.client.extensions.itemsApi
+import org.jellyfin.sdk.api.client.extensions.playStateApi
+import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.ItemFields
 import org.jellyfin.sdk.model.api.ItemSortBy
+import org.jellyfin.sdk.model.api.UserItemDataDto
 import org.jellyfin.sdk.model.serializer.toUUID
+import java.util.UUID
 import javax.inject.Inject
 
 @HiltViewModel
@@ -57,6 +62,49 @@ class SeasonViewModel @Inject constructor(
                 )
             )
             _episodes.value = response.content.items
+        }
+    }
+
+    fun updatePlayed(id: UUID, isPlayed: Boolean) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val server = dataStore.activeServerFlow.firstOrNull() ?: return@launch
+            val api = jellyfinClient.createApiClient(server.baseUrl, server.accessToken)
+
+            if (isPlayed) api.playStateApi.markUnplayedItem(id)
+            else api.playStateApi.markPlayedItem(id)
+
+            updateUserDataLocally(id) { it.copy(played = !isPlayed) }
+        }
+    }
+
+    fun updateFavorite(id: UUID, isFavorite: Boolean) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val server = dataStore.activeServerFlow.firstOrNull() ?: return@launch
+            val api = jellyfinClient.createApiClient(server.baseUrl, server.accessToken)
+
+            if (isFavorite) api.userLibraryApi.unmarkFavoriteItem(id)
+            else api.userLibraryApi.markFavoriteItem(id)
+
+            updateUserDataLocally(id) { it.copy(isFavorite = !isFavorite) }
+        }
+    }
+
+    private fun updateUserDataLocally(
+        id: UUID,
+        transform: (UserItemDataDto) -> UserItemDataDto
+    ) {
+        _season.update { season ->
+            if (season?.id == id) {
+                season.copy(userData = season.userData?.let(transform))
+            } else season
+        }
+
+        _episodes.update { episodes ->
+            episodes.map { ep ->
+                if (ep.id == id) {
+                    ep.copy(userData = ep.userData?.let(transform))
+                } else ep
+            }
         }
     }
 }

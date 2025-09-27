@@ -22,6 +22,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Star
@@ -34,6 +35,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
@@ -59,6 +61,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import coil.compose.AsyncImage
 import dev.trimpsuz.sealfin.ui.viewmodel.libraries.LibraryItemViewModel
 import org.jellyfin.sdk.model.api.BaseItemKind
+import org.jellyfin.sdk.model.serializer.toUUID
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -203,12 +206,24 @@ fun LibraryItemScreen(
                         Text("Play")
                     }
                     Spacer(Modifier.width(8.dp))
-                    OutlinedButton(onClick = { /* TODO mark completed */ }) {
-                        Icon(Icons.Default.Check, contentDescription = null)
+                    OutlinedButton(onClick = {
+                        viewModel.updatePlayed(itemId.toUUID(), item!!.userData?.played == true)
+                    }) {
+                        Icon(
+                            Icons.Default.Check,
+                            contentDescription = null,
+                            tint = if (item!!.userData?.played == true) Color(0xffd14747) else LocalContentColor.current,
+                        )
                     }
                     Spacer(Modifier.width(8.dp))
-                    OutlinedButton(onClick = { /* TODO like */ }) {
-                        Icon(Icons.Default.FavoriteBorder, contentDescription = null)
+                    OutlinedButton(onClick = {
+                        viewModel.updateFavorite(itemId.toUUID(), item!!.userData?.isFavorite == true)
+                    }) {
+                        Icon(
+                            if (item!!.userData?.isFavorite == true) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                            contentDescription = null,
+                            tint = if (item!!.userData?.isFavorite == true) Color(0xffd14747) else LocalContentColor.current,
+                        )
                     }
                 }
 

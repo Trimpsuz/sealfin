@@ -10,16 +10,22 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.api.client.extensions.itemsApi
+import org.jellyfin.sdk.api.client.extensions.playStateApi
 import org.jellyfin.sdk.api.client.extensions.tvShowsApi
+import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.CollectionType
 import org.jellyfin.sdk.model.api.ItemFields
 import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.SortOrder
+import org.jellyfin.sdk.model.api.UserItemDataDto
+import java.util.UUID
 import javax.inject.Inject
 
 @HiltViewModel
@@ -36,7 +42,6 @@ class HomeViewModel @Inject constructor(
 
     private val _recentlyAdded = MutableStateFlow<List<LibraryWithItems>>(emptyList())
     val recentlyAdded: StateFlow<List<LibraryWithItems>> = _recentlyAdded.asStateFlow()
-
 
     init {
         viewModelScope.launch {
@@ -118,6 +123,49 @@ class HomeViewModel @Inject constructor(
                 _recentlyAdded.value = results
             } catch (e: Exception) {
                 _recentlyAdded.value = emptyList()
+            }
+        }
+    }
+
+    fun updatePlayed(id: UUID, isPlayed: Boolean) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val server = dataStore.activeServerFlow.firstOrNull() ?: return@launch
+            val api = jellyfinClient.createApiClient(server.baseUrl, server.accessToken)
+
+            if (isPlayed) api.playStateApi.markUnplayedItem(id)
+            else api.playStateApi.markPlayedItem(id)
+
+            updateUserDataLocally(id) { it.copy(played = !isPlayed) }
+        }
+    }
+
+    fun updateFavorite(id: UUID, isFavorite: Boolean) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val server = dataStore.activeServerFlow.firstOrNull() ?: return@launch
+            val api = jellyfinClient.createApiClient(server.baseUrl, server.accessToken)
+
+            if (isFavorite) api.userLibraryApi.unmarkFavoriteItem(id)
+            else api.userLibraryApi.markFavoriteItem(id)
+
+            updateUserDataLocally(id) { it.copy(isFavorite = !isFavorite) }
+        }
+    }
+
+    private fun updateUserDataLocally(
+        id: UUID,
+        transform: (UserItemDataDto) -> UserItemDataDto
+    ) {
+        _continueWatching.update { list ->
+            list.map { item ->
+                if (item.id == id) item.copy(userData = item.userData?.let(transform))
+                else item
+            }
+        }
+
+        _nextUp.update { list ->
+            list.map { item ->
+                if (item.id == id) item.copy(userData = item.userData?.let(transform))
+                else item
             }
         }
     }

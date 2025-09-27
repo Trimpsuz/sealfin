@@ -20,13 +20,20 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -52,7 +59,8 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import coil.compose.AsyncImage
 import dev.trimpsuz.sealfin.ui.composables.EpisodePopup
 import dev.trimpsuz.sealfin.ui.viewmodel.libraries.SeasonViewModel
-import org.jellyfin.sdk.model.api.BaseItemDto
+import org.jellyfin.sdk.model.serializer.toUUID
+import java.util.UUID
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -69,7 +77,9 @@ fun SeasonScreen(
 
     val onBackgroundColor = MaterialTheme.colorScheme.onBackground
 
-    var selectedEpisode by remember { mutableStateOf<BaseItemDto?>(null) }
+    var selectedEpisodeId by remember { mutableStateOf<UUID?>(null) }
+    val selectedEpisode = episodes.find { it.id == selectedEpisodeId }
+
 
     LaunchedEffect(seasonId) {
         viewModel.loadSeason(seasonId)
@@ -167,12 +177,44 @@ fun SeasonScreen(
                     Spacer(Modifier.height(8.dp))
                 }
 
+                item {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    ) {
+                        Button(onClick = { /* TODO play */ }) {
+                            Icon(Icons.Default.PlayArrow, contentDescription = null)
+                            Spacer(Modifier.width(4.dp))
+                            Text("Play")
+                        }
+                        Spacer(Modifier.width(8.dp))
+                        OutlinedButton(onClick = {
+                            viewModel.updatePlayed(seasonId.toUUID(), season!!.userData?.played == true)
+                        }) {
+                            Icon(
+                                Icons.Default.Check,
+                                contentDescription = null,
+                                tint = if (season!!.userData?.played == true) Color(0xffd14747) else LocalContentColor.current,
+                            )
+                        }
+                        Spacer(Modifier.width(8.dp))
+                        OutlinedButton(onClick = {
+                            viewModel.updateFavorite(seasonId.toUUID(), season!!.userData?.isFavorite == true)
+                        }) {
+                            Icon(
+                                if (season!!.userData?.isFavorite == true) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                                contentDescription = null,
+                                tint = if (season!!.userData?.isFavorite == true) Color(0xffd14747) else LocalContentColor.current,
+                            )
+                        }
+                    }
+                }
+
                 items(episodes) { episode ->
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp, vertical = 8.dp)
-                            .clickable { selectedEpisode = episode },
+                            .clickable { selectedEpisodeId = episode.id },
                         shape = RoundedCornerShape(12.dp),
                         elevation = CardDefaults.cardElevation(4.dp)
                     ) {
@@ -252,10 +294,12 @@ fun SeasonScreen(
 
     if (selectedEpisode != null) {
         EpisodePopup(
-            episode = selectedEpisode!!,
-            seriesName = selectedEpisode!!.seriesName ?: "Series",
-            onDismiss = { selectedEpisode = null },
-            activeServer = activeServer
+            episode = selectedEpisode,
+            seriesName = selectedEpisode.seriesName ?: "Series",
+            onDismiss = { selectedEpisodeId = null },
+            activeServer = activeServer,
+            updatePlayed = viewModel::updatePlayed,
+            updateFavorite = viewModel::updateFavorite
         )
     }
 }

@@ -30,7 +30,7 @@ import dev.trimpsuz.sealfin.ui.composables.LibraryItemCard
 import dev.trimpsuz.sealfin.ui.composables.SeriesItemCard
 import dev.trimpsuz.sealfin.ui.viewmodel.AuthViewModel
 import dev.trimpsuz.sealfin.ui.viewmodel.HomeViewModel
-import org.jellyfin.sdk.model.api.BaseItemDto
+import java.util.UUID
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -45,7 +45,10 @@ fun HomeScreen(
     val recentlyAdded by homeViewModel.recentlyAdded.collectAsState()
     val activeServer by authViewModel.activeServer.collectAsState()
 
-    var selectedEpisode by remember { mutableStateOf<BaseItemDto?>(null) }
+    var selectedEpisodeId by remember { mutableStateOf<UUID?>(null) }
+    val selectedEpisode = selectedEpisodeId?.let { id ->
+        continueWatching.find { it.id == id } ?: nextUp.find { it.id == id }
+    }
 
     Scaffold(
         topBar = { TopAppBar(title = { Text("Home") }) }
@@ -69,7 +72,7 @@ fun HomeScreen(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         items(continueWatching, key = { it.id }) { item ->
-                            SeriesItemCard(item, activeServer?.baseUrl, { item -> selectedEpisode = item })
+                            SeriesItemCard(item, activeServer?.baseUrl, { item -> selectedEpisodeId = item.id })
                         }
                     }
                 }
@@ -89,7 +92,7 @@ fun HomeScreen(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         items(nextUp, key = { it.id }) { item ->
-                            SeriesItemCard(item, activeServer?.baseUrl, { item -> selectedEpisode = item })
+                            SeriesItemCard(item, activeServer?.baseUrl, { item -> selectedEpisodeId = item.id })
                         }
                     }
                 }
@@ -134,10 +137,12 @@ fun HomeScreen(
 
     if (selectedEpisode != null) {
         EpisodePopup(
-            episode = selectedEpisode!!,
-            seriesName = selectedEpisode!!.seriesName ?: "Series",
-            onDismiss = { selectedEpisode = null },
-            activeServer = activeServer
+            episode = selectedEpisode,
+            seriesName = selectedEpisode.seriesName ?: "Series",
+            onDismiss = { selectedEpisodeId = null },
+            activeServer = activeServer,
+            updatePlayed = homeViewModel::updatePlayed,
+            updateFavorite = homeViewModel::updateFavorite
         )
     }
 }
