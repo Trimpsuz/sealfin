@@ -30,6 +30,7 @@ import dev.trimpsuz.sealfin.ui.composables.LibraryItemCard
 import dev.trimpsuz.sealfin.ui.composables.SeriesItemCard
 import dev.trimpsuz.sealfin.ui.viewmodel.AuthViewModel
 import dev.trimpsuz.sealfin.ui.viewmodel.HomeViewModel
+import org.jellyfin.sdk.model.api.BaseItemKind
 import java.util.UUID
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -72,7 +73,10 @@ fun HomeScreen(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         items(continueWatching, key = { it.id }) { item ->
-                            SeriesItemCard(item, activeServer?.baseUrl, { item -> selectedEpisodeId = item.id })
+                            if (item.type === BaseItemKind.EPISODE)
+                                SeriesItemCard(item, activeServer?.baseUrl, { item -> selectedEpisodeId = item.id })
+                            else
+                                LibraryItemCard(item, activeServer?.baseUrl, onLibraryItemSelected)
                         }
                     }
                 }
@@ -92,7 +96,10 @@ fun HomeScreen(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         items(nextUp, key = { it.id }) { item ->
-                            SeriesItemCard(item, activeServer?.baseUrl, { item -> selectedEpisodeId = item.id })
+                            if (item.type === BaseItemKind.EPISODE)
+                                SeriesItemCard(item, activeServer?.baseUrl, { item -> selectedEpisodeId = item.id })
+                            else
+                                LibraryItemCard(item, activeServer?.baseUrl, onLibraryItemSelected)
                         }
                     }
                 }
