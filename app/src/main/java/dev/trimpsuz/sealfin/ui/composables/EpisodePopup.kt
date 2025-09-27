@@ -2,6 +2,7 @@ package dev.trimpsuz.sealfin.ui.composables
 
 import android.widget.TextView
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -56,7 +57,8 @@ fun EpisodePopup(
     onDismiss: () -> Unit,
     activeServer: Server?,
     updatePlayed: (UUID, Boolean) -> Unit,
-    updateFavorite: (UUID, Boolean) -> Unit
+    updateFavorite: (UUID, Boolean) -> Unit,
+    onLibraryItemSelected: (String, String) -> Unit
 ) {
     val onSurfaceColor = MaterialTheme.colorScheme.onSurface
 
@@ -100,6 +102,12 @@ fun EpisodePopup(
                         Text(
                             text = seriesName,
                             style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.clickable(
+                                onClick = {
+                                    onDismiss()
+                                    onLibraryItemSelected(episode.seriesId.toString(), seriesName)
+                                }
+                            )
                         )
                         Text(
                             text = "S${episode.parentIndexNumber}:E${episode.indexNumber} — ${episode.name}",

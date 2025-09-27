@@ -69,7 +69,8 @@ fun SeasonScreen(
     seasonId: String,
     seasonName: String,
     onBack: () -> Unit,
-    viewModel: SeasonViewModel = hiltViewModel()
+    viewModel: SeasonViewModel = hiltViewModel(),
+    onLibraryItemSelected: (String, String) -> Unit
 ) {
     val season by viewModel.season.collectAsState()
     val episodes by viewModel.episodes.collectAsState()
@@ -299,7 +300,8 @@ fun SeasonScreen(
             onDismiss = { selectedEpisodeId = null },
             activeServer = activeServer,
             updatePlayed = viewModel::updatePlayed,
-            updateFavorite = viewModel::updateFavorite
+            updateFavorite = viewModel::updateFavorite,
+            onLibraryItemSelected = onLibraryItemSelected
         )
     }
 }

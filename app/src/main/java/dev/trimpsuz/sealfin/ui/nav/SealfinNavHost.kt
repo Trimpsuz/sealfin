@@ -152,7 +152,8 @@ fun SealfinNavHost() {
                     parentId = parentId,
                     seasonId = seasonId,
                     seasonName = seasonName,
-                    onBack = { navController.popBackStack() }
+                    onBack = { navController.popBackStack() },
+                    onLibraryItemSelected = { id, name -> navController.navigateOrPopBackStack("library_item/$id/$name") }
                 )
             }
             composable(BottomNavItem.Favorites.route) { FavoritesScreen() }

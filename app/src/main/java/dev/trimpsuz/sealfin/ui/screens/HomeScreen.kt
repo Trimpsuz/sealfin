@@ -142,7 +142,8 @@ fun HomeScreen(
             onDismiss = { selectedEpisodeId = null },
             activeServer = activeServer,
             updatePlayed = homeViewModel::updatePlayed,
-            updateFavorite = homeViewModel::updateFavorite
+            updateFavorite = homeViewModel::updateFavorite,
+            onLibraryItemSelected = onLibraryItemSelected
         )
     }
 }
