@@ -5,7 +5,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -65,8 +64,10 @@ import org.jellyfin.sdk.model.api.BaseItemKind
 @Composable
 fun LibraryItemScreen(
     itemId: String,
+    itemName: String,
     onBack: () -> Unit,
-    viewModel: LibraryItemViewModel = hiltViewModel()
+    viewModel: LibraryItemViewModel = hiltViewModel(),
+    onSeasonSelected: (String, String) -> Unit
 ) {
     val item by viewModel.item.collectAsState()
     val seasons by viewModel.seasons.collectAsState()
@@ -81,7 +82,7 @@ fun LibraryItemScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(item?.name ?: "Loading...", maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                title = { Text(itemName, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -112,7 +113,7 @@ fun LibraryItemScreen(
                 ) {
                     AsyncImage(
                         model = "${activeServer?.baseUrl}/Items/${item?.id}/Images/Backdrop/0",
-                        contentDescription = item?.name,
+                        contentDescription = itemName,
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop
                     )
@@ -135,7 +136,7 @@ fun LibraryItemScreen(
                             .padding(horizontal = 16.dp)
                     ) {
                         Text(
-                            text = item?.name ?: "",
+                            text = itemName,
                             style = MaterialTheme.typography.headlineMedium.copy(color = Color.White),
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis
@@ -263,7 +264,7 @@ fun LibraryItemScreen(
                                 modifier = Modifier
                                     .width(140.dp)
                                     .padding(end = 8.dp),
-                                onClick = { /* TODO open season screen */ }
+                                onClick = { onSeasonSelected(season.id.toString(), season.name ?: "") }
                             ) {
                                 Column {
                                     AsyncImage(
@@ -334,7 +335,7 @@ fun LibraryItemScreen(
                     }
                 }
 
-                Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(8.dp))
             }
         }
     }

@@ -33,7 +33,7 @@ fun HomeScreen(
     onLibrarySelected: (String, String) -> Unit,
     homeViewModel: HomeViewModel = hiltViewModel(),
     authViewModel: AuthViewModel = hiltViewModel(),
-    onLibraryItemSelected: (String) -> Unit
+    onLibraryItemSelected: (String, String) -> Unit
 ) {
     val continueWatching by homeViewModel.continueWatching.collectAsState()
     val nextUp by homeViewModel.nextUp.collectAsState()

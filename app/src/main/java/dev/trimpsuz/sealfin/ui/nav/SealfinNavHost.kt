@@ -31,6 +31,7 @@ import dev.trimpsuz.sealfin.ui.screens.SettingsScreen
 import dev.trimpsuz.sealfin.ui.screens.libraries.LibrariesScreen
 import dev.trimpsuz.sealfin.ui.screens.libraries.LibraryDetailsScreen
 import dev.trimpsuz.sealfin.ui.screens.libraries.LibraryItemScreen
+import dev.trimpsuz.sealfin.ui.screens.libraries.SeasonScreen
 import dev.trimpsuz.sealfin.ui.viewmodel.AuthViewModel
 import dev.trimpsuz.sealfin.utils.navigateOrPopBackStack
 
@@ -106,7 +107,7 @@ fun SealfinNavHost() {
                 onLibrarySelected = { libraryId, libraryName ->
                     navController.navigate("library/$libraryId/$libraryName")
                 },
-                onLibraryItemSelected = { id -> navController.navigate("library_item/$id") }
+                onLibraryItemSelected = { id, name -> navController.navigate("library_item/$id/$name") }
             ) }
             composable(BottomNavItem.Libraries.route) {
                 LibrariesScreen(
@@ -127,16 +128,30 @@ fun SealfinNavHost() {
                 LibraryDetailsScreen(libraryId,
                     libraryName,
                     onBack = { navController.popBackStack() },
-                    onItemSelected = { id -> navController.navigate("library_item/$id") }
+                    onItemSelected = { id, name -> navController.navigate("library_item/$id/$name") }
                 )
             }
             composable(
-                route = "library_item/{itemId}",
+                route = "library_item/{itemId}/{itemName}",
                 arguments = listOf(navArgument("itemId") { type = NavType.StringType })
             ) { backStackEntry ->
                 val itemId = backStackEntry.arguments?.getString("itemId") ?: return@composable
+                val itemName = backStackEntry.arguments?.getString("itemName") ?: return@composable
                 LibraryItemScreen(
                     itemId = itemId,
+                    itemName = itemName,
+                    onBack = { navController.popBackStack() },
+                    onSeasonSelected = { id, name -> navController.navigate("library_season/$itemId/$id/$name") }
+                )
+            }
+            composable("library_season/{parentId}/{seasonId}/{seasonName}") { backStackEntry ->
+                val parentId = backStackEntry.arguments?.getString("parentId") ?: return@composable
+                val seasonId = backStackEntry.arguments?.getString("seasonId") ?: return@composable
+                val seasonName = backStackEntry.arguments?.getString("seasonName") ?: return@composable
+                SeasonScreen(
+                    parentId = parentId,
+                    seasonId = seasonId,
+                    seasonName = seasonName,
                     onBack = { navController.popBackStack() }
                 )
             }

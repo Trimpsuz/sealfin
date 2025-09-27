@@ -25,12 +25,12 @@ import org.jellyfin.sdk.model.api.ImageType
 fun LibraryItemCard(
     item: BaseItemDto,
     baseUrl: String?,
-    onLibraryItemSelected: (String) -> Unit
+    onLibraryItemSelected: (String, String) -> Unit
 ) {
     Column(
         modifier = Modifier
             .width(120.dp)
-            .clickable { onLibraryItemSelected(item.id.toString()) }
+            .clickable { onLibraryItemSelected(item.id.toString(), item.name ?: "") }
     ) {
         AsyncImage(
             model = "$baseUrl/Items/${item.id}/Images/Primary?tag=${item.imageTags?.get(ImageType.PRIMARY)}",

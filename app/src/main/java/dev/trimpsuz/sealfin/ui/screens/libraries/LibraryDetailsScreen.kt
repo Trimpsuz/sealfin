@@ -46,7 +46,7 @@ fun LibraryDetailsScreen(
     libraryName: String,
     viewModel: LibrariesViewModel = hiltViewModel(),
     onBack: () -> Unit,
-    onItemSelected: (String) -> Unit
+    onItemSelected: (String, String) -> Unit
 ) {
     val items by viewModel.libraryItems.collectAsState()
     val activeServer by viewModel.activeServer.collectAsState()
@@ -80,7 +80,7 @@ fun LibraryDetailsScreen(
                         .padding(8.dp)
                         .fillMaxWidth()
                         .clickable {
-                            onItemSelected(item.id.toString())
+                            onItemSelected(item.id.toString(), item.name ?: "")
                         },
                     shape = RoundedCornerShape(12.dp),
                     elevation = CardDefaults.cardElevation(4.dp)
