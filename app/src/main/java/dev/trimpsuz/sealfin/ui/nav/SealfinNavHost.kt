@@ -18,7 +18,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -31,6 +30,7 @@ import dev.trimpsuz.sealfin.ui.screens.LoginScreen
 import dev.trimpsuz.sealfin.ui.screens.SettingsScreen
 import dev.trimpsuz.sealfin.ui.screens.libraries.LibrariesScreen
 import dev.trimpsuz.sealfin.ui.screens.libraries.LibraryDetailsScreen
+import dev.trimpsuz.sealfin.ui.screens.libraries.LibraryItemScreen
 import dev.trimpsuz.sealfin.ui.viewmodel.AuthViewModel
 import dev.trimpsuz.sealfin.utils.navigateOrPopBackStack
 
@@ -105,7 +105,8 @@ fun SealfinNavHost() {
             composable(BottomNavItem.Home.route) { HomeScreen(
                 onLibrarySelected = { libraryId, libraryName ->
                     navController.navigate("library/$libraryId/$libraryName")
-                }
+                },
+                onLibraryItemSelected = { id -> navController.navigate("library_item/$id") }
             ) }
             composable(BottomNavItem.Libraries.route) {
                 LibrariesScreen(
@@ -125,7 +126,18 @@ fun SealfinNavHost() {
                 val libraryName = backStackEntry.arguments?.getString("libraryName")!!
                 LibraryDetailsScreen(libraryId,
                     libraryName,
-                    onBack = { navController.popBackStack()}
+                    onBack = { navController.popBackStack() },
+                    onItemSelected = { id -> navController.navigate("library_item/$id") }
+                )
+            }
+            composable(
+                route = "library_item/{itemId}",
+                arguments = listOf(navArgument("itemId") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val itemId = backStackEntry.arguments?.getString("itemId") ?: return@composable
+                LibraryItemScreen(
+                    itemId = itemId,
+                    onBack = { navController.popBackStack() }
                 )
             }
             composable(BottomNavItem.Favorites.route) { FavoritesScreen() }

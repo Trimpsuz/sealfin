@@ -1,5 +1,6 @@
 package dev.trimpsuz.sealfin.ui.screens.libraries
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -44,7 +45,8 @@ fun LibraryDetailsScreen(
     libraryId: String,
     libraryName: String,
     viewModel: LibrariesViewModel = hiltViewModel(),
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onItemSelected: (String) -> Unit
 ) {
     val items by viewModel.libraryItems.collectAsState()
     val activeServer by viewModel.activeServer.collectAsState()
@@ -76,7 +78,10 @@ fun LibraryDetailsScreen(
                 Card(
                     modifier = Modifier
                         .padding(8.dp)
-                        .fillMaxWidth(),
+                        .fillMaxWidth()
+                        .clickable {
+                            onItemSelected(item.id.toString())
+                        },
                     shape = RoundedCornerShape(12.dp),
                     elevation = CardDefaults.cardElevation(4.dp)
                 ) {

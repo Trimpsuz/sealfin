@@ -32,7 +32,8 @@ import dev.trimpsuz.sealfin.ui.viewmodel.HomeViewModel
 fun HomeScreen(
     onLibrarySelected: (String, String) -> Unit,
     homeViewModel: HomeViewModel = hiltViewModel(),
-    authViewModel: AuthViewModel = hiltViewModel()
+    authViewModel: AuthViewModel = hiltViewModel(),
+    onLibraryItemSelected: (String) -> Unit
 ) {
     val continueWatching by homeViewModel.continueWatching.collectAsState()
     val nextUp by homeViewModel.nextUp.collectAsState()
@@ -116,7 +117,7 @@ fun HomeScreen(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         items(library.items) { item ->
-                            LibraryItemCard(item, activeServer?.baseUrl)
+                            LibraryItemCard(item, activeServer?.baseUrl, onLibraryItemSelected)
                         }
                     }
                 }

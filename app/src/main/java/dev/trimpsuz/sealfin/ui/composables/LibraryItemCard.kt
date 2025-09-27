@@ -22,11 +22,15 @@ import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.ImageType
 
 @Composable
-fun LibraryItemCard(item: BaseItemDto, baseUrl: String?) {
+fun LibraryItemCard(
+    item: BaseItemDto,
+    baseUrl: String?,
+    onLibraryItemSelected: (String) -> Unit
+) {
     Column(
         modifier = Modifier
             .width(120.dp)
-            .clickable { /* TODO: Open item details */ }
+            .clickable { onLibraryItemSelected(item.id.toString()) }
     ) {
         AsyncImage(
             model = "$baseUrl/Items/${item.id}/Images/Primary?tag=${item.imageTags?.get(ImageType.PRIMARY)}",
