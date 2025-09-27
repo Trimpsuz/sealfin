@@ -163,7 +163,7 @@ fun LibraryItemScreen(
 
                     Text(
                         yearText,
-                        style = MaterialTheme.typography.titleMedium.copy(color = Color.White)
+                        style = MaterialTheme.typography.titleMedium
                     )
 
                     item?.runTimeTicks?.let { ticks ->
@@ -188,7 +188,7 @@ fun LibraryItemScreen(
                             Spacer(Modifier.width(4.dp))
                             Text(
                                 text = String.format("%.1f", rating),
-                                style = MaterialTheme.typography.titleMedium.copy(color = Color.White)
+                                style = MaterialTheme.typography.titleMedium
                             )
                         }
                     }

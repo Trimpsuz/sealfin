@@ -34,6 +34,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -47,7 +50,9 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.text.HtmlCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import coil.compose.AsyncImage
+import dev.trimpsuz.sealfin.ui.composables.EpisodePopup
 import dev.trimpsuz.sealfin.ui.viewmodel.libraries.SeasonViewModel
+import org.jellyfin.sdk.model.api.BaseItemDto
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -63,6 +68,8 @@ fun SeasonScreen(
     val activeServer by viewModel.activeServer.collectAsState()
 
     val onBackgroundColor = MaterialTheme.colorScheme.onBackground
+
+    var selectedEpisode by remember { mutableStateOf<BaseItemDto?>(null) }
 
     LaunchedEffect(seasonId) {
         viewModel.loadSeason(seasonId)
@@ -165,7 +172,7 @@ fun SeasonScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp, vertical = 8.dp)
-                            .clickable { /* TODO open episode */ },
+                            .clickable { selectedEpisode = episode },
                         shape = RoundedCornerShape(12.dp),
                         elevation = CardDefaults.cardElevation(4.dp)
                     ) {
@@ -239,8 +246,16 @@ fun SeasonScreen(
                         }
                     }
                 }
-
             }
         }
+    }
+
+    if (selectedEpisode != null) {
+        EpisodePopup(
+            episode = selectedEpisode!!,
+            seriesName = selectedEpisode!!.seriesName ?: "Series",
+            onDismiss = { selectedEpisode = null },
+            activeServer = activeServer
+        )
     }
 }

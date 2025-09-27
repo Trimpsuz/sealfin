@@ -18,14 +18,19 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import dev.trimpsuz.sealfin.ui.composables.EpisodePopup
 import dev.trimpsuz.sealfin.ui.composables.LibraryItemCard
 import dev.trimpsuz.sealfin.ui.composables.SeriesItemCard
 import dev.trimpsuz.sealfin.ui.viewmodel.AuthViewModel
 import dev.trimpsuz.sealfin.ui.viewmodel.HomeViewModel
+import org.jellyfin.sdk.model.api.BaseItemDto
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -39,6 +44,8 @@ fun HomeScreen(
     val nextUp by homeViewModel.nextUp.collectAsState()
     val recentlyAdded by homeViewModel.recentlyAdded.collectAsState()
     val activeServer by authViewModel.activeServer.collectAsState()
+
+    var selectedEpisode by remember { mutableStateOf<BaseItemDto?>(null) }
 
     Scaffold(
         topBar = { TopAppBar(title = { Text("Home") }) }
@@ -62,7 +69,7 @@ fun HomeScreen(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         items(continueWatching, key = { it.id }) { item ->
-                            SeriesItemCard(item, activeServer?.baseUrl)
+                            SeriesItemCard(item, activeServer?.baseUrl, { item -> selectedEpisode = item })
                         }
                     }
                 }
@@ -82,7 +89,7 @@ fun HomeScreen(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         items(nextUp, key = { it.id }) { item ->
-                            SeriesItemCard(item, activeServer?.baseUrl)
+                            SeriesItemCard(item, activeServer?.baseUrl, { item -> selectedEpisode = item })
                         }
                     }
                 }
@@ -123,5 +130,14 @@ fun HomeScreen(
                 }
             }
         }
+    }
+
+    if (selectedEpisode != null) {
+        EpisodePopup(
+            episode = selectedEpisode!!,
+            seriesName = selectedEpisode!!.seriesName ?: "Series",
+            onDismiss = { selectedEpisode = null },
+            activeServer = activeServer
+        )
     }
 }

@@ -17,6 +17,7 @@ import org.jellyfin.sdk.api.client.extensions.tvShowsApi
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.CollectionType
+import org.jellyfin.sdk.model.api.ItemFields
 import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.SortOrder
 import javax.inject.Inject
@@ -56,7 +57,11 @@ class HomeViewModel @Inject constructor(
         withContext(Dispatchers.IO) {
             try {
                 val api = jellyfinClient.createApiClient(baseUrl, token)
-                val response = api.itemsApi.getResumeItems()
+                val response = api.itemsApi.getResumeItems(
+                    fields = listOf(
+                        ItemFields.OVERVIEW
+                    )
+                )
                 _continueWatching.value = response.content.items
             } catch (e: Exception) {
                 _continueWatching.value = emptyList()
@@ -68,7 +73,11 @@ class HomeViewModel @Inject constructor(
         withContext(Dispatchers.IO) {
             try {
                 val api = jellyfinClient.createApiClient(baseUrl, token)
-                val response = api.tvShowsApi.getNextUp()
+                val response = api.tvShowsApi.getNextUp(
+                    fields = listOf(
+                        ItemFields.OVERVIEW
+                    )
+                )
                 _nextUp.value = response.content.items
             } catch (e: Exception) {
                 _nextUp.value = emptyList()
