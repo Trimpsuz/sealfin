@@ -3,11 +3,14 @@ package dev.trimpsuz.sealfin.data
 import android.content.Context
 import dagger.hilt.android.qualifiers.ApplicationContext
 import org.jellyfin.sdk.api.client.ApiClient
+import org.jellyfin.sdk.api.client.HttpClientOptions
 import org.jellyfin.sdk.api.client.extensions.authenticateUserByName
 import org.jellyfin.sdk.api.client.extensions.userApi
 import org.jellyfin.sdk.createJellyfin
 import org.jellyfin.sdk.model.ClientInfo
 import javax.inject.Inject
+import kotlin.time.DurationUnit
+import kotlin.time.toDuration
 
 class JellyfinClientWrapper @Inject constructor(
     private val dataStore: DataStoreManager,
@@ -45,7 +48,12 @@ class JellyfinClientWrapper @Inject constructor(
         return if (accessToken != null) {
             jellyfin.createApi(
                 baseUrl = serverUrl,
-                accessToken = accessToken
+                accessToken = accessToken,
+                httpClientOptions = HttpClientOptions(
+                    requestTimeout = 30_000L.toDuration(DurationUnit.MILLISECONDS),
+                    connectTimeout = 6_000L.toDuration(DurationUnit.MILLISECONDS),
+                    socketTimeout = 10_000L.toDuration(DurationUnit.MILLISECONDS),
+                ),
             )
         } else {
             jellyfin.createApi(baseUrl = serverUrl)

@@ -81,7 +81,6 @@ fun SeasonScreen(
     var selectedEpisodeId by remember { mutableStateOf<UUID?>(null) }
     val selectedEpisode = episodes.find { it.id == selectedEpisodeId }
 
-
     LaunchedEffect(seasonId) {
         viewModel.loadSeason(seasonId)
         viewModel.loadEpisodes(seasonId)
@@ -165,7 +164,13 @@ fun SeasonScreen(
                                 Text(
                                     text = season?.seriesName ?: "",
                                     style = MaterialTheme.typography.titleMedium,
-                                    color = Color.White
+                                    color = Color.White,
+                                    modifier = Modifier.clickable(
+                                        onClick = {
+                                            if(season?.seriesId != null && season?.seriesName != null)
+                                                onLibraryItemSelected(season?.seriesId.toString(), season?.seriesName!!)
+                                        }
+                                    )
                                 )
                                 Text(
                                     text = seasonName,

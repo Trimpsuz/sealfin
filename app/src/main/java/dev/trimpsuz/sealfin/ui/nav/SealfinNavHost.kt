@@ -156,7 +156,10 @@ fun SealfinNavHost() {
                     onLibraryItemSelected = { id, name -> navController.navigateOrPopBackStack("library_item/$id/$name") }
                 )
             }
-            composable(BottomNavItem.Favorites.route) { FavoritesScreen() }
+            composable(BottomNavItem.Favorites.route) { FavoritesScreen(
+                onSeasonSelected = { seriesId, id, name -> navController.navigate("library_season/$seriesId/$id/$name") },
+                onLibraryItemSelected = { id, name -> navController.navigate("library_item/$id/$name") }
+            ) }
             composable(BottomNavItem.Settings.route) {
                 SettingsScreen(
                     onServerSelectorRequested = {
