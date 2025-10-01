@@ -23,6 +23,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -55,62 +57,70 @@ fun LibraryDetailsScreen(
         viewModel.loadLibraryItems(libraryId)
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(libraryName) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                }
-            )
-        }
-    ) { padding ->
-        LazyVerticalGrid(
-            columns = GridCells.Adaptive(120.dp),
-            modifier = Modifier
-                .padding(padding)
-                .fillMaxSize(),
-            contentPadding = PaddingValues(8.dp)
-        ) {
-            items(items) { item ->
-                Card(
-                    modifier = Modifier
-                        .padding(8.dp)
-                        .fillMaxWidth()
-                        .clickable {
-                            onItemSelected(item.id.toString(), item.name ?: "")
-                        },
-                    shape = RoundedCornerShape(12.dp),
-                    elevation = CardDefaults.cardElevation(4.dp)
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        AsyncImage(
-                            model = "${activeServer?.baseUrl}/Items/${item.id}/Images/Primary?tag=${
-                                item.imageTags?.get(
-                                    ImageType.PRIMARY
-                                )
-                            }",
-                            contentDescription = item.name,
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(180.dp),
-                            error = rememberVectorPainter(Icons.Outlined.Image),
-                            placeholder = rememberVectorPainter(Icons.Outlined.Image)
-                        )
+    val isRefreshing by viewModel.isRefreshingLibraryItems.collectAsState()
 
-                        Text(
-                            text = item.name ?: "Unknown",
-                            style = MaterialTheme.typography.bodySmall,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.padding(4.dp)
-                        )
+    PullToRefreshBox(
+        state = rememberPullToRefreshState(),
+        isRefreshing = isRefreshing,
+        onRefresh = { viewModel.loadLibraryItems(libraryId) }
+    ) {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Text(libraryName) },
+                    navigationIcon = {
+                        IconButton(onClick = onBack) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        }
+                    }
+                )
+            }
+        ) { padding ->
+            LazyVerticalGrid(
+                columns = GridCells.Adaptive(120.dp),
+                modifier = Modifier
+                    .padding(padding)
+                    .fillMaxSize(),
+                contentPadding = PaddingValues(8.dp)
+            ) {
+                items(items) { item ->
+                    Card(
+                        modifier = Modifier
+                            .padding(8.dp)
+                            .fillMaxWidth()
+                            .clickable {
+                                onItemSelected(item.id.toString(), item.name ?: "")
+                            },
+                        shape = RoundedCornerShape(12.dp),
+                        elevation = CardDefaults.cardElevation(4.dp)
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            AsyncImage(
+                                model = "${activeServer?.baseUrl}/Items/${item.id}/Images/Primary?tag=${
+                                    item.imageTags?.get(
+                                        ImageType.PRIMARY
+                                    )
+                                }",
+                                contentDescription = item.name,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(180.dp),
+                                error = rememberVectorPainter(Icons.Outlined.Image),
+                                placeholder = rememberVectorPainter(Icons.Outlined.Image)
+                            )
+
+                            Text(
+                                text = item.name ?: "Unknown",
+                                style = MaterialTheme.typography.bodySmall,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.padding(4.dp)
+                            )
+                        }
                     }
                 }
             }

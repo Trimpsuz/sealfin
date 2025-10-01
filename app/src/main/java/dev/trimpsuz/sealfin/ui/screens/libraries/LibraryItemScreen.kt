@@ -41,6 +41,8 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -82,275 +84,291 @@ fun LibraryItemScreen(
         viewModel.loadItem(itemId)
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(itemName, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+    val isRefreshing by viewModel.isRefreshing.collectAsState()
+
+    PullToRefreshBox(
+        state = rememberPullToRefreshState(),
+        isRefreshing = isRefreshing,
+        onRefresh = { viewModel.loadItem(itemId) }
+    ) {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Text(itemName, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                    navigationIcon = {
+                        IconButton(onClick = onBack) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        }
                     }
-                }
-            )
-        }
-    ) { padding ->
-        if (item == null) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator()
+                )
             }
-        } else {
-            Column(
-                modifier = Modifier
-                    .verticalScroll(rememberScrollState())
-                    .padding(padding)
-            ) {
+        ) { padding ->
+            if (item == null) {
                 Box(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .height(250.dp)
+                        .fillMaxSize()
+                        .padding(padding),
+                    contentAlignment = Alignment.Center
                 ) {
-                    AsyncImage(
-                        model = "${activeServer?.baseUrl}/Items/${item?.id}/Images/Backdrop/0",
-                        contentDescription = itemName,
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
-                    )
-                    Box(
-                        Modifier
-                            .matchParentSize()
-                            .background(
-                                Brush.verticalGradient(
-                                    listOf(
-                                        Color.Transparent,
-                                        MaterialTheme.colorScheme.background
-                                    ),
-                                    startY = 100f
-                                )
-                            )
-                    )
-                    Column(
-                        modifier = Modifier
-                            .align(Alignment.BottomStart)
-                            .padding(horizontal = 16.dp)
-                    ) {
-                        Text(
-                            text = itemName,
-                            style = MaterialTheme.typography.headlineMedium.copy(color = Color.White),
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
+                    CircularProgressIndicator()
                 }
-
-                Spacer(Modifier.height(8.dp))
-                Row(
+            } else {
+                Column(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                        .verticalScroll(rememberScrollState())
+                        .padding(padding)
                 ) {
-                    val startYear = item?.premiereDate?.year ?: item?.productionYear
-                    val endYear = item?.endDate?.year
-
-                    val yearText = when {
-                        startYear != null && endYear != null && startYear != endYear -> "$startYear — $endYear"
-                        startYear != null && (endYear == null || endYear == startYear) -> startYear.toString()
-                        else -> "Unknown"
-                    }
-
-                    Text(
-                        yearText,
-                        style = MaterialTheme.typography.titleMedium
-                    )
-
-                    item?.runTimeTicks?.let { ticks ->
-                        val minutes = ticks / 600000000L
-                        Text("$minutes min", style = MaterialTheme.typography.titleMedium)
-                    }
-
-                    item?.officialRating?.let { rating ->
-                        Text(rating, style = MaterialTheme.typography.titleMedium)
-                    }
-
-                    item?.communityRating?.let { rating ->
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(250.dp)
+                    ) {
+                        AsyncImage(
+                            model = "${activeServer?.baseUrl}/Items/${item?.id}/Images/Backdrop/0",
+                            contentDescription = itemName,
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                        Box(
+                            Modifier
+                                .matchParentSize()
+                                .background(
+                                    Brush.verticalGradient(
+                                        listOf(
+                                            Color.Transparent,
+                                            MaterialTheme.colorScheme.background
+                                        ),
+                                        startY = 100f
+                                    )
+                                )
+                        )
+                        Column(
+                            modifier = Modifier
+                                .align(Alignment.BottomStart)
+                                .padding(horizontal = 16.dp)
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.Star,
-                                contentDescription = "Rating",
-                                tint = Color(0xfff3b731),
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(Modifier.width(4.dp))
                             Text(
-                                text = String.format("%.1f", rating),
-                                style = MaterialTheme.typography.titleMedium
+                                text = itemName,
+                                style = MaterialTheme.typography.headlineMedium.copy(color = Color.White),
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
                     }
-                }
-                Spacer(Modifier.height(8.dp))
-                Row (
-                    modifier = Modifier.padding(horizontal = 16.dp)
-                ) {
-                    Button(onClick = { /* TODO play */ }) {
-                        Icon(Icons.Default.PlayArrow, contentDescription = null)
-                        Spacer(Modifier.width(4.dp))
-                        Text("Play")
-                    }
-                    Spacer(Modifier.width(8.dp))
-                    OutlinedButton(onClick = {
-                        viewModel.updatePlayed(itemId.toUUID(), item!!.userData?.played == true)
-                    }) {
-                        Icon(
-                            Icons.Default.Check,
-                            contentDescription = null,
-                            tint = if (item!!.userData?.played == true) Color(0xffd14747) else LocalContentColor.current,
-                        )
-                    }
-                    Spacer(Modifier.width(8.dp))
-                    OutlinedButton(onClick = {
-                        viewModel.updateFavorite(itemId.toUUID(), item!!.userData?.isFavorite == true)
-                    }) {
-                        Icon(
-                            if (item!!.userData?.isFavorite == true) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                            contentDescription = null,
-                            tint = if (item!!.userData?.isFavorite == true) Color(0xffd14747) else LocalContentColor.current,
-                        )
-                    }
-                }
 
-                Spacer(Modifier.height(12.dp))
-
-                if (!item?.genres.isNullOrEmpty()) {
-                    LazyRow (
+                    Spacer(Modifier.height(8.dp))
+                    Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        items(item!!.genres!!) { genre ->
-                            AssistChip(
-                                onClick = { },
-                                label = { Text(genre) }
-                            )
+                        val startYear = item?.premiereDate?.year ?: item?.productionYear
+                        val endYear = item?.endDate?.year
+
+                        val yearText = when {
+                            startYear != null && endYear != null && startYear != endYear -> "$startYear — $endYear"
+                            startYear != null && (endYear == null || endYear == startYear) -> startYear.toString()
+                            else -> "Unknown"
                         }
-                    }
-                    Spacer(Modifier.height(8.dp))
-                }
 
-                if (!item?.overview.isNullOrBlank()) {
-                    AndroidView(
-                        modifier = Modifier.padding(horizontal = 16.dp),
-                        factory = { context ->
-                            TextView(context).apply {
-                                setTextColor(onBackgroundColor.toArgb())
-                                textSize = 16f
-                            }
-                        },
-                        update = { tv ->
-                            tv.text = HtmlCompat.fromHtml(
-                                item!!.overview!!,
-                                HtmlCompat.FROM_HTML_MODE_LEGACY
-                            )
+                        Text(
+                            yearText,
+                            style = MaterialTheme.typography.titleMedium
+                        )
+
+                        item?.runTimeTicks?.let { ticks ->
+                            val minutes = ticks / 600000000L
+                            Text("$minutes min", style = MaterialTheme.typography.titleMedium)
                         }
-                    )
-                }
 
-                Spacer(Modifier.height(18.dp))
+                        item?.officialRating?.let { rating ->
+                            Text(rating, style = MaterialTheme.typography.titleMedium)
+                        }
 
-                if (item?.type == BaseItemKind.SERIES && seasons.isNotEmpty()) {
-                    Text(
-                        "Seasons",
-                        style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.padding(horizontal = 16.dp)
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    LazyRow(contentPadding = PaddingValues(horizontal = 16.dp)) {
-                        items(seasons) { season ->
-                            Card(
-                                modifier = Modifier
-                                    .width(140.dp)
-                                    .padding(end = 8.dp),
-                                onClick = { onSeasonSelected(season.id.toString(), season.name ?: "") }
+                        item?.communityRating?.let { rating ->
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Column {
-                                    AsyncImage(
-                                        model = "${activeServer?.baseUrl}/Items/${season.id}/Images/Primary",
-                                        contentDescription = season.name,
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .height(200.dp),
-                                        contentScale = ContentScale.Crop,
-                                        placeholder = rememberVectorPainter(Icons.Outlined.Image)
-                                    )
-                                    Text(
-                                        season.name ?: "Season",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        modifier = Modifier.padding(8.dp),
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                }
-                            }
-                        }
-                    }
-                    Spacer(Modifier.height(18.dp))
-                }
-
-                if (!item?.people.isNullOrEmpty()) {
-                    Text(
-                        "Cast & Crew",
-                        style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.padding(horizontal = 16.dp)
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    LazyRow(contentPadding = PaddingValues(horizontal = 16.dp)) {
-                        items(item!!.people!!) { person ->
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                modifier = Modifier
-                                    .width(100.dp)
-                                    .padding(end = 8.dp)
-                            ) {
-                                AsyncImage(
-                                    model = "${activeServer?.baseUrl}/Items/${person.id}/Images/Primary",
-                                    contentDescription = person.name,
-                                    modifier = Modifier
-                                        .size(80.dp)
-                                        .clip(CircleShape),
-                                    contentScale = ContentScale.Crop,
-                                    placeholder = rememberVectorPainter(Icons.Outlined.Person)
+                                Icon(
+                                    imageVector = Icons.Default.Star,
+                                    contentDescription = "Rating",
+                                    tint = Color(0xfff3b731),
+                                    modifier = Modifier.size(18.dp)
                                 )
-                                Spacer(Modifier.height(4.dp))
+                                Spacer(Modifier.width(4.dp))
                                 Text(
-                                    text = person.name ?: "",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
+                                    text = String.format("%.1f", rating),
+                                    style = MaterialTheme.typography.titleMedium
                                 )
-                                person.role?.let {
+                            }
+                        }
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    ) {
+                        Button(onClick = { /* TODO play */ }) {
+                            Icon(Icons.Default.PlayArrow, contentDescription = null)
+                            Spacer(Modifier.width(4.dp))
+                            Text("Play")
+                        }
+                        Spacer(Modifier.width(8.dp))
+                        OutlinedButton(onClick = {
+                            viewModel.updatePlayed(itemId.toUUID(), item!!.userData?.played == true)
+                        }) {
+                            Icon(
+                                Icons.Default.Check,
+                                contentDescription = null,
+                                tint = if (item!!.userData?.played == true) Color(0xffd14747) else LocalContentColor.current,
+                            )
+                        }
+                        Spacer(Modifier.width(8.dp))
+                        OutlinedButton(onClick = {
+                            viewModel.updateFavorite(
+                                itemId.toUUID(),
+                                item!!.userData?.isFavorite == true
+                            )
+                        }) {
+                            Icon(
+                                if (item!!.userData?.isFavorite == true) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                                contentDescription = null,
+                                tint = if (item!!.userData?.isFavorite == true) Color(0xffd14747) else LocalContentColor.current,
+                            )
+                        }
+                    }
+
+                    Spacer(Modifier.height(12.dp))
+
+                    if (!item?.genres.isNullOrEmpty()) {
+                        LazyRow(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            items(item!!.genres!!) { genre ->
+                                AssistChip(
+                                    onClick = { },
+                                    label = { Text(genre) }
+                                )
+                            }
+                        }
+                        Spacer(Modifier.height(8.dp))
+                    }
+
+                    if (!item?.overview.isNullOrBlank()) {
+                        AndroidView(
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                            factory = { context ->
+                                TextView(context).apply {
+                                    setTextColor(onBackgroundColor.toArgb())
+                                    textSize = 16f
+                                }
+                            },
+                            update = { tv ->
+                                tv.text = HtmlCompat.fromHtml(
+                                    item!!.overview!!,
+                                    HtmlCompat.FROM_HTML_MODE_LEGACY
+                                )
+                            }
+                        )
+                    }
+
+                    Spacer(Modifier.height(18.dp))
+
+                    if (item?.type == BaseItemKind.SERIES && seasons.isNotEmpty()) {
+                        Text(
+                            "Seasons",
+                            style = MaterialTheme.typography.titleMedium,
+                            modifier = Modifier.padding(horizontal = 16.dp)
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        LazyRow(contentPadding = PaddingValues(horizontal = 16.dp)) {
+                            items(seasons) { season ->
+                                Card(
+                                    modifier = Modifier
+                                        .width(140.dp)
+                                        .padding(end = 8.dp),
+                                    onClick = {
+                                        onSeasonSelected(
+                                            season.id.toString(),
+                                            season.name ?: ""
+                                        )
+                                    }
+                                ) {
+                                    Column {
+                                        AsyncImage(
+                                            model = "${activeServer?.baseUrl}/Items/${season.id}/Images/Primary",
+                                            contentDescription = season.name,
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .height(200.dp),
+                                            contentScale = ContentScale.Crop,
+                                            placeholder = rememberVectorPainter(Icons.Outlined.Image)
+                                        )
+                                        Text(
+                                            season.name ?: "Season",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            modifier = Modifier.padding(8.dp),
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                        Spacer(Modifier.height(18.dp))
+                    }
+
+                    if (!item?.people.isNullOrEmpty()) {
+                        Text(
+                            "Cast & Crew",
+                            style = MaterialTheme.typography.titleMedium,
+                            modifier = Modifier.padding(horizontal = 16.dp)
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        LazyRow(contentPadding = PaddingValues(horizontal = 16.dp)) {
+                            items(item!!.people!!) { person ->
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    modifier = Modifier
+                                        .width(100.dp)
+                                        .padding(end = 8.dp)
+                                ) {
+                                    AsyncImage(
+                                        model = "${activeServer?.baseUrl}/Items/${person.id}/Images/Primary",
+                                        contentDescription = person.name,
+                                        modifier = Modifier
+                                            .size(80.dp)
+                                            .clip(CircleShape),
+                                        contentScale = ContentScale.Crop,
+                                        placeholder = rememberVectorPainter(Icons.Outlined.Person)
+                                    )
+                                    Spacer(Modifier.height(4.dp))
                                     Text(
-                                        text = it,
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        text = person.name ?: "",
+                                        style = MaterialTheme.typography.bodySmall,
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis
                                     )
+                                    person.role?.let {
+                                        Text(
+                                            text = it,
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                    }
                                 }
                             }
                         }
                     }
-                }
 
-                Spacer(Modifier.height(8.dp))
+                    Spacer(Modifier.height(8.dp))
+                }
             }
         }
     }

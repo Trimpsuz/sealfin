@@ -38,6 +38,9 @@ class FavoritesViewModel @Inject constructor(
     private val _favorites = MutableStateFlow<Map<String, List<BaseItemDto>>>(emptyMap())
     val favorites: StateFlow<Map<String, List<BaseItemDto>>> = _favorites.asStateFlow()
 
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
+
     val activeServer: StateFlow<Server?> = dataStore.activeServerFlow
         .stateIn(viewModelScope, SharingStarted.Lazily, null)
 
@@ -117,6 +120,18 @@ class FavoritesViewModel @Inject constructor(
                     if (item.id == id) item.copy(userData = item.userData?.let(transform))
                     else item
                 }
+            }
+        }
+    }
+
+    fun refresh() {
+        viewModelScope.launch {
+            _isRefreshing.value = true
+            try {
+                val server = dataStore.activeServerFlow.firstOrNull() ?: return@launch
+                loadFavorites(server.baseUrl, server.accessToken)
+            } finally {
+                _isRefreshing.value = false
             }
         }
     }

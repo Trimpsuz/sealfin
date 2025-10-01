@@ -20,6 +20,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -43,51 +45,63 @@ fun LibrariesScreen(
     val libraries by viewModel.libraries.collectAsState()
     val activeServer by viewModel.activeServer.collectAsState()
 
-    Scaffold(
-        topBar = { TopAppBar(title = { Text("Libraries") }) }
-    ) { padding ->
-        LazyVerticalGrid(
-            columns = GridCells.Adaptive(140.dp),
-            modifier = Modifier
-                .padding(padding)
-                .fillMaxSize(),
-            contentPadding = PaddingValues(8.dp)
-        ) {
-            items(libraries) { library ->
-                Card(
-                    modifier = Modifier
-                        .padding(8.dp)
-                        .fillMaxWidth()
-                        .clickable {
-                            onLibrarySelected(
-                                library.id.toString(),
-                                library.name ?: "Library"
-                            )
-                        },
-                    shape = RoundedCornerShape(12.dp),
-                    elevation = CardDefaults.cardElevation(4.dp)
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        AsyncImage(
-                            model = "${activeServer?.baseUrl}/Items/${library.id}/Images/Primary?tag=${library.imageTags?.get(ImageType.PRIMARY)}",
-                            contentDescription = library.name,
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(180.dp),
-                            error = rememberVectorPainter(Icons.Outlined.Folder),
-                            placeholder = rememberVectorPainter(Icons.Outlined.Folder)
-                        )
+    val isRefreshing by viewModel.isRefreshing.collectAsState()
 
-                        Text(
-                            text = library.name ?: "Unknown",
-                            style = MaterialTheme.typography.bodyMedium,
-                            modifier = Modifier.padding(8.dp),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
+    PullToRefreshBox(
+        state = rememberPullToRefreshState(),
+        isRefreshing = isRefreshing,
+        onRefresh = { viewModel.refresh() }
+    ) {
+        Scaffold(
+            topBar = { TopAppBar(title = { Text("Libraries") }) }
+        ) { padding ->
+            LazyVerticalGrid(
+                columns = GridCells.Adaptive(140.dp),
+                modifier = Modifier
+                    .padding(padding)
+                    .fillMaxSize(),
+                contentPadding = PaddingValues(8.dp)
+            ) {
+                items(libraries) { library ->
+                    Card(
+                        modifier = Modifier
+                            .padding(8.dp)
+                            .fillMaxWidth()
+                            .clickable {
+                                onLibrarySelected(
+                                    library.id.toString(),
+                                    library.name ?: "Library"
+                                )
+                            },
+                        shape = RoundedCornerShape(12.dp),
+                        elevation = CardDefaults.cardElevation(4.dp)
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            AsyncImage(
+                                model = "${activeServer?.baseUrl}/Items/${library.id}/Images/Primary?tag=${
+                                    library.imageTags?.get(
+                                        ImageType.PRIMARY
+                                    )
+                                }",
+                                contentDescription = library.name,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(180.dp),
+                                error = rememberVectorPainter(Icons.Outlined.Folder),
+                                placeholder = rememberVectorPainter(Icons.Outlined.Folder)
+                            )
+
+                            Text(
+                                text = library.name ?: "Unknown",
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier.padding(8.dp),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
                     }
                 }
             }

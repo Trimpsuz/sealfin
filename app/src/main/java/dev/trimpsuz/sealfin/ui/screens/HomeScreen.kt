@@ -15,6 +15,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -51,90 +53,112 @@ fun HomeScreen(
         continueWatching.find { it.id == id } ?: nextUp.find { it.id == id }
     }
 
-    Scaffold(
-        topBar = { TopAppBar(title = { Text("Home") }) }
-    ) { padding ->
-        LazyColumn(
-            modifier = Modifier
-                .padding(padding)
-                .fillMaxSize()
-        ) {
-            if (continueWatching.isNotEmpty()) {
-                item {
-                    Text(
-                        "Continue Watching",
-                        style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.padding(8.dp)
-                    )
-                }
-                item {
-                    LazyRow(
-                        contentPadding = PaddingValues(horizontal = 8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        items(continueWatching, key = { it.id }) { item ->
-                            if (item.type === BaseItemKind.EPISODE)
-                                SeriesItemCard(item, activeServer?.baseUrl, { item -> selectedEpisodeId = item.id })
-                            else
-                                LibraryItemCard(item, activeServer?.baseUrl, onLibraryItemSelected)
-                        }
-                    }
-                }
-            }
+    val isRefreshing by homeViewModel.isRefreshing.collectAsState()
 
-            if (nextUp.isNotEmpty()) {
-                item {
-                    Text(
-                        "Next Up",
-                        style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.padding(8.dp)
-                    )
-                }
-                item {
-                    LazyRow(
-                        contentPadding = PaddingValues(horizontal = 8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        items(nextUp, key = { it.id }) { item ->
-                            if (item.type === BaseItemKind.EPISODE)
-                                SeriesItemCard(item, activeServer?.baseUrl, { item -> selectedEpisodeId = item.id })
-                            else
-                                LibraryItemCard(item, activeServer?.baseUrl, onLibraryItemSelected)
-                        }
-                    }
-                }
-            }
-
-            recentlyAdded.forEach { library ->
-                item {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 8.dp, vertical = 4.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
+    PullToRefreshBox(
+        state = rememberPullToRefreshState(),
+        isRefreshing = isRefreshing,
+        onRefresh = { homeViewModel.refresh() }
+    ) {
+        Scaffold(
+            topBar = { TopAppBar(title = { Text("Home") }) }
+        ) { padding ->
+            LazyColumn(
+                modifier = Modifier
+                    .padding(padding)
+                    .fillMaxSize()
+            ) {
+                if (continueWatching.isNotEmpty()) {
+                    item {
                         Text(
-                            "Latest in ${library.name}",
-                            style = MaterialTheme.typography.titleMedium
+                            "Continue Watching",
+                            style = MaterialTheme.typography.titleMedium,
+                            modifier = Modifier.padding(8.dp)
                         )
-                        TextButton(onClick = {
-                            onLibrarySelected(
-                                library.id,
-                                library.name
-                            )
-                        }) {
-                            Text("View More")
+                    }
+                    item {
+                        LazyRow(
+                            contentPadding = PaddingValues(horizontal = 8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            items(continueWatching, key = { it.id }) { item ->
+                                if (item.type === BaseItemKind.EPISODE)
+                                    SeriesItemCard(
+                                        item,
+                                        activeServer?.baseUrl,
+                                        { item -> selectedEpisodeId = item.id })
+                                else
+                                    LibraryItemCard(
+                                        item,
+                                        activeServer?.baseUrl,
+                                        onLibraryItemSelected
+                                    )
+                            }
                         }
                     }
                 }
-                item {
-                    LazyRow(
-                        contentPadding = PaddingValues(horizontal = 8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        items(library.items) { item ->
-                            LibraryItemCard(item, activeServer?.baseUrl, onLibraryItemSelected)
+
+                if (nextUp.isNotEmpty()) {
+                    item {
+                        Text(
+                            "Next Up",
+                            style = MaterialTheme.typography.titleMedium,
+                            modifier = Modifier.padding(8.dp)
+                        )
+                    }
+                    item {
+                        LazyRow(
+                            contentPadding = PaddingValues(horizontal = 8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            items(nextUp, key = { it.id }) { item ->
+                                if (item.type === BaseItemKind.EPISODE)
+                                    SeriesItemCard(
+                                        item,
+                                        activeServer?.baseUrl,
+                                        { item -> selectedEpisodeId = item.id })
+                                else
+                                    LibraryItemCard(
+                                        item,
+                                        activeServer?.baseUrl,
+                                        onLibraryItemSelected
+                                    )
+                            }
+                        }
+                    }
+                }
+
+                recentlyAdded.forEach { library ->
+                    item {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 8.dp, vertical = 4.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                "Latest in ${library.name}",
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                            TextButton(onClick = {
+                                onLibrarySelected(
+                                    library.id,
+                                    library.name
+                                )
+                            }) {
+                                Text("View More")
+                            }
+                        }
+                    }
+                    item {
+                        LazyRow(
+                            contentPadding = PaddingValues(horizontal = 8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            items(library.items) { item ->
+                                LibraryItemCard(item, activeServer?.baseUrl, onLibraryItemSelected)
+                            }
                         }
                     }
                 }

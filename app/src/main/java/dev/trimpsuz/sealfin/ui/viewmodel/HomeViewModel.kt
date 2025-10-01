@@ -43,6 +43,9 @@ class HomeViewModel @Inject constructor(
     private val _recentlyAdded = MutableStateFlow<List<LibraryWithItems>>(emptyList())
     val recentlyAdded: StateFlow<List<LibraryWithItems>> = _recentlyAdded.asStateFlow()
 
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
+
     init {
         viewModelScope.launch {
             dataStore.activeServerFlow.collectLatest { server ->
@@ -170,6 +173,19 @@ class HomeViewModel @Inject constructor(
         }
     }
 
+    fun refresh() {
+        viewModelScope.launch {
+            _isRefreshing.value = true
+            try {
+                val server = dataStore.activeServerFlow.firstOrNull() ?: return@launch
+                loadContinueWatching(server.baseUrl, server.accessToken)
+                loadNextUp(server.baseUrl, server.accessToken)
+                loadRecentlyAdded(server.baseUrl, server.accessToken)
+            } finally {
+                _isRefreshing.value = false
+            }
+        }
+    }
 }
 
 data class LibraryWithItems(

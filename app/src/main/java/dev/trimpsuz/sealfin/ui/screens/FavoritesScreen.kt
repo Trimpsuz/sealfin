@@ -12,6 +12,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -42,38 +44,59 @@ fun FavoritesScreen(
     var selectedEpisodeId by remember { mutableStateOf<UUID?>(null) }
     val selectedEpisode = favorites.values.flatten().find { it.id == selectedEpisodeId }
 
-    Scaffold(
-        topBar = { TopAppBar(title = { Text("Favorites") }) }
-    ) { padding ->
-        LazyColumn(
-            modifier = Modifier
-                .padding(padding)
-                .fillMaxSize()
-        ) {
-            favorites.forEach { (category, items) ->
-                if (items.isNotEmpty()) {
-                    item {
-                        Text(
-                            category,
-                            style = MaterialTheme.typography.titleMedium,
-                            modifier = Modifier.padding(8.dp)
-                        )
-                    }
-                    item {
-                        LazyRow(
-                            contentPadding = PaddingValues(horizontal = 8.dp),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            items(items, key = { it.id }) { item ->
-                                when (item.type) {
-                                    BaseItemKind.EPISODE -> {
-                                        SeriesItemCard(item, activeServer?.baseUrl, { item -> selectedEpisodeId = item.id })
-                                    }
-                                    BaseItemKind.SEASON -> {
-                                        SeasonCard(item, activeServer?.baseUrl, onSeasonSelected)
-                                    }
-                                    else -> {
-                                        LibraryItemCard(item, activeServer?.baseUrl, onLibraryItemSelected)
+    val isRefreshing by viewModel.isRefreshing.collectAsState()
+
+    PullToRefreshBox(
+        state = rememberPullToRefreshState(),
+        isRefreshing = isRefreshing,
+        onRefresh = { viewModel.refresh() }
+    ) {
+        Scaffold(
+            topBar = { TopAppBar(title = { Text("Favorites") }) }
+        ) { padding ->
+            LazyColumn(
+                modifier = Modifier
+                    .padding(padding)
+                    .fillMaxSize()
+            ) {
+                favorites.forEach { (category, items) ->
+                    if (items.isNotEmpty()) {
+                        item {
+                            Text(
+                                category,
+                                style = MaterialTheme.typography.titleMedium,
+                                modifier = Modifier.padding(8.dp)
+                            )
+                        }
+                        item {
+                            LazyRow(
+                                contentPadding = PaddingValues(horizontal = 8.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                items(items, key = { it.id }) { item ->
+                                    when (item.type) {
+                                        BaseItemKind.EPISODE -> {
+                                            SeriesItemCard(
+                                                item,
+                                                activeServer?.baseUrl,
+                                                { item -> selectedEpisodeId = item.id })
+                                        }
+
+                                        BaseItemKind.SEASON -> {
+                                            SeasonCard(
+                                                item,
+                                                activeServer?.baseUrl,
+                                                onSeasonSelected
+                                            )
+                                        }
+
+                                        else -> {
+                                            LibraryItemCard(
+                                                item,
+                                                activeServer?.baseUrl,
+                                                onLibraryItemSelected
+                                            )
+                                        }
                                     }
                                 }
                             }

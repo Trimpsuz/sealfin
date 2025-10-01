@@ -41,6 +41,9 @@ class SeasonViewModel @Inject constructor(
     val activeServer: StateFlow<Server?> =
         dataStore.activeServerFlow.stateIn(viewModelScope, SharingStarted.Lazily, null)
 
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
+
     fun loadSeason(seasonId: String) {
         viewModelScope.launch(Dispatchers.IO) {
             val server = dataStore.activeServerFlow.firstOrNull() ?: return@launch
@@ -104,6 +107,18 @@ class SeasonViewModel @Inject constructor(
                 if (ep.id == id) {
                     ep.copy(userData = ep.userData?.let(transform))
                 } else ep
+            }
+        }
+    }
+
+    fun refresh(seasonId: String) {
+        viewModelScope.launch {
+            _isRefreshing.value = true
+            try {
+                loadSeason(seasonId)
+                loadEpisodes(seasonId)
+            } finally {
+                _isRefreshing.value = false
             }
         }
     }

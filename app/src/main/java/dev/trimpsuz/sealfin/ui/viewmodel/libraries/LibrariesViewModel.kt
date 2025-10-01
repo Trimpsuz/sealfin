@@ -36,6 +36,12 @@ class LibrariesViewModel @Inject constructor(
     private val _libraryItems = MutableStateFlow<List<BaseItemDto>>(emptyList())
     val libraryItems: StateFlow<List<BaseItemDto>> = _libraryItems.asStateFlow()
 
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
+
+    private val _isRefreshingLibraryItems = MutableStateFlow(false)
+    val isRefreshingLibraryItems: StateFlow<Boolean> = _isRefreshingLibraryItems.asStateFlow()
+
     val activeServer: StateFlow<Server?> = dataStore.activeServerFlow
         .stateIn(viewModelScope, SharingStarted.Lazily, null)
 
@@ -71,6 +77,7 @@ class LibrariesViewModel @Inject constructor(
 
     fun loadLibraryItems(libraryId: String) {
         viewModelScope.launch {
+            _isRefreshingLibraryItems.value = true
             val server = dataStore.activeServerFlow.firstOrNull() ?: return@launch
             try {
                 withContext(Dispatchers.IO) {
@@ -83,9 +90,22 @@ class LibrariesViewModel @Inject constructor(
                 }
             } catch (e: Exception) {
                 _libraryItems.value = emptyList()
+            } finally {
+                _isRefreshingLibraryItems.value = false
             }
         }
     }
 
+    fun refresh() {
+        viewModelScope.launch {
+            _isRefreshing.value = true
+            try {
+                val server = dataStore.activeServerFlow.firstOrNull() ?: return@launch
+                loadLibraries(server.baseUrl, server.accessToken)
+            } finally {
+                _isRefreshing.value = false
+            }
+        }
+    }
 }
 

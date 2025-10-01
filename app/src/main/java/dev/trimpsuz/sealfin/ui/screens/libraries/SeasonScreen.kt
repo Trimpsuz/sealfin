@@ -37,6 +37,8 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -86,210 +88,231 @@ fun SeasonScreen(
         viewModel.loadEpisodes(seasonId)
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(seasonName) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                }
-            )
-        }
-    ) { padding ->
-        if (season == null) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator()
-            }
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-            ) {
-                item {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(250.dp)
-                    ) {
-                        AsyncImage(
-                            model = "${activeServer?.baseUrl}/Items/$parentId/Images/Backdrop/0",
-                            contentDescription = seasonName,
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop
-                        )
-                        Box(
-                            Modifier
-                                .matchParentSize()
-                                .background(
-                                    Brush.verticalGradient(
-                                        listOf(
-                                            Color.Transparent,
-                                            MaterialTheme.colorScheme.background
-                                        ),
-                                        startY = 100f
-                                    )
-                                )
-                        )
+    val isRefreshing by viewModel.isRefreshing.collectAsState()
 
-                        Row(
+    PullToRefreshBox(
+        state = rememberPullToRefreshState(),
+        isRefreshing = isRefreshing,
+        onRefresh = {
+            viewModel.refresh(seasonId)
+        }
+    ) {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Text(seasonName) },
+                    navigationIcon = {
+                        IconButton(onClick = onBack) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        }
+                    }
+                )
+            }
+        ) { padding ->
+            if (season == null) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding)
+                ) {
+                    item {
+                        Box(
                             modifier = Modifier
-                                .align(Alignment.BottomStart)
                                 .fillMaxWidth()
-                                .padding(horizontal = 16.dp),
-                            horizontalArrangement = Arrangement.spacedBy(16.dp),
-                            verticalAlignment = Alignment.Bottom
+                                .height(250.dp)
                         ) {
                             AsyncImage(
-                                model = "${activeServer?.baseUrl}/Items/${season?.id}/Images/Primary",
+                                model = "${activeServer?.baseUrl}/Items/$parentId/Images/Backdrop/0",
                                 contentDescription = seasonName,
-                                modifier = Modifier
-                                    .width(120.dp)
-                                    .height(180.dp)
-                                    .clip(RoundedCornerShape(8.dp)),
-                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop
                             )
-                            Column(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .align(Alignment.Bottom)
-                            ) {
-                                Text(
-                                    text = season?.seriesName ?: "",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    color = Color.White,
-                                    modifier = Modifier.clickable(
-                                        onClick = {
-                                            if(season?.seriesId != null && season?.seriesName != null)
-                                                onLibraryItemSelected(season?.seriesId.toString(), season?.seriesName!!)
-                                        }
+                            Box(
+                                Modifier
+                                    .matchParentSize()
+                                    .background(
+                                        Brush.verticalGradient(
+                                            listOf(
+                                                Color.Transparent,
+                                                MaterialTheme.colorScheme.background
+                                            ),
+                                            startY = 100f
+                                        )
                                     )
+                            )
+
+                            Row(
+                                modifier = Modifier
+                                    .align(Alignment.BottomStart)
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp),
+                                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                                verticalAlignment = Alignment.Bottom
+                            ) {
+                                AsyncImage(
+                                    model = "${activeServer?.baseUrl}/Items/${season?.id}/Images/Primary",
+                                    contentDescription = seasonName,
+                                    modifier = Modifier
+                                        .width(120.dp)
+                                        .height(180.dp)
+                                        .clip(RoundedCornerShape(8.dp)),
+                                    contentScale = ContentScale.Crop,
                                 )
-                                Text(
-                                    text = seasonName,
-                                    style = MaterialTheme.typography.headlineLarge,
-                                    color = Color.White
+                                Column(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .align(Alignment.Bottom)
+                                ) {
+                                    Text(
+                                        text = season?.seriesName ?: "",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        color = Color.White,
+                                        modifier = Modifier.clickable(
+                                            onClick = {
+                                                if (season?.seriesId != null && season?.seriesName != null)
+                                                    onLibraryItemSelected(
+                                                        season?.seriesId.toString(),
+                                                        season?.seriesName!!
+                                                    )
+                                            }
+                                        )
+                                    )
+                                    Text(
+                                        text = seasonName,
+                                        style = MaterialTheme.typography.headlineLarge,
+                                        color = Color.White
+                                    )
+                                }
+                            }
+                        }
+                        Spacer(Modifier.height(8.dp))
+                    }
+
+                    item {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 16.dp)
+                        ) {
+                            Button(onClick = { /* TODO play */ }) {
+                                Icon(Icons.Default.PlayArrow, contentDescription = null)
+                                Spacer(Modifier.width(4.dp))
+                                Text("Play")
+                            }
+                            Spacer(Modifier.width(8.dp))
+                            OutlinedButton(onClick = {
+                                viewModel.updatePlayed(
+                                    seasonId.toUUID(),
+                                    season!!.userData?.played == true
+                                )
+                            }) {
+                                Icon(
+                                    Icons.Default.Check,
+                                    contentDescription = null,
+                                    tint = if (season!!.userData?.played == true) Color(0xffd14747) else LocalContentColor.current,
+                                )
+                            }
+                            Spacer(Modifier.width(8.dp))
+                            OutlinedButton(onClick = {
+                                viewModel.updateFavorite(
+                                    seasonId.toUUID(),
+                                    season!!.userData?.isFavorite == true
+                                )
+                            }) {
+                                Icon(
+                                    if (season!!.userData?.isFavorite == true) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                                    contentDescription = null,
+                                    tint = if (season!!.userData?.isFavorite == true) Color(
+                                        0xffd14747
+                                    ) else LocalContentColor.current,
                                 )
                             }
                         }
                     }
-                    Spacer(Modifier.height(8.dp))
-                }
 
-                item {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 16.dp)
-                    ) {
-                        Button(onClick = { /* TODO play */ }) {
-                            Icon(Icons.Default.PlayArrow, contentDescription = null)
-                            Spacer(Modifier.width(4.dp))
-                            Text("Play")
-                        }
-                        Spacer(Modifier.width(8.dp))
-                        OutlinedButton(onClick = {
-                            viewModel.updatePlayed(seasonId.toUUID(), season!!.userData?.played == true)
-                        }) {
-                            Icon(
-                                Icons.Default.Check,
-                                contentDescription = null,
-                                tint = if (season!!.userData?.played == true) Color(0xffd14747) else LocalContentColor.current,
-                            )
-                        }
-                        Spacer(Modifier.width(8.dp))
-                        OutlinedButton(onClick = {
-                            viewModel.updateFavorite(seasonId.toUUID(), season!!.userData?.isFavorite == true)
-                        }) {
-                            Icon(
-                                if (season!!.userData?.isFavorite == true) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                                contentDescription = null,
-                                tint = if (season!!.userData?.isFavorite == true) Color(0xffd14747) else LocalContentColor.current,
-                            )
-                        }
-                    }
-                }
-
-                items(episodes) { episode ->
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 8.dp)
-                            .clickable { selectedEpisodeId = episode.id },
-                        shape = RoundedCornerShape(12.dp),
-                        elevation = CardDefaults.cardElevation(4.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(8.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                    items(episodes) { episode ->
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 8.dp)
+                                .clickable { selectedEpisodeId = episode.id },
+                            shape = RoundedCornerShape(12.dp),
+                            elevation = CardDefaults.cardElevation(4.dp)
                         ) {
-                            AsyncImage(
-                                model = "${activeServer?.baseUrl}/Items/${episode.id}/Images/Primary",
-                                contentDescription = episode.name,
-                                modifier = Modifier
-                                    .width(120.dp)
-                                    .height(80.dp)
-                                    .clip(RoundedCornerShape(8.dp)),
-                                contentScale = ContentScale.Crop,
-                            )
-
-                            Spacer(Modifier.width(12.dp))
-
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(80.dp)
+                            Row(
+                                modifier = Modifier.padding(8.dp),
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Column(
+                                AsyncImage(
+                                    model = "${activeServer?.baseUrl}/Items/${episode.id}/Images/Primary",
+                                    contentDescription = episode.name,
                                     modifier = Modifier
-                                        .matchParentSize()
-                                        .verticalScroll(rememberScrollState(), enabled = false)
-                                        .padding(end = 8.dp)
-                                ) {
-                                    Text(
-                                        text = "${episode.indexNumber}. ${episode.name}",
-                                        style = MaterialTheme.typography.titleSmall,
-                                        maxLines = Int.MAX_VALUE,
-                                        overflow = TextOverflow.Clip
-                                    )
-                                    if (!episode.overview.isNullOrBlank()) {
-                                        AndroidView(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            factory = { context ->
-                                                TextView(context).apply {
-                                                    setTextColor(onBackgroundColor.toArgb())
-                                                    textSize = 12f
-                                                }
-                                            },
-                                            update = { tv ->
-                                                tv.text = HtmlCompat.fromHtml(
-                                                    episode.overview!!,
-                                                    HtmlCompat.FROM_HTML_MODE_LEGACY
-                                                )
-                                            }
-                                        )
-                                    }
-                                }
+                                        .width(120.dp)
+                                        .height(80.dp)
+                                        .clip(RoundedCornerShape(8.dp)),
+                                    contentScale = ContentScale.Crop,
+                                )
+
+                                Spacer(Modifier.width(12.dp))
 
                                 Box(
                                     modifier = Modifier
-                                        .align(Alignment.BottomCenter)
-                                        .fillMaxWidth()
-                                        .height(24.dp)
-                                        .background(
-                                            Brush.verticalGradient(
-                                                colors = listOf(
-                                                    Color.Transparent,
-                                                    CardDefaults.cardColors().containerColor
+                                        .weight(1f)
+                                        .height(80.dp)
+                                ) {
+                                    Column(
+                                        modifier = Modifier
+                                            .matchParentSize()
+                                            .verticalScroll(rememberScrollState(), enabled = false)
+                                            .padding(end = 8.dp)
+                                    ) {
+                                        Text(
+                                            text = "${episode.indexNumber}. ${episode.name}",
+                                            style = MaterialTheme.typography.titleSmall,
+                                            maxLines = Int.MAX_VALUE,
+                                            overflow = TextOverflow.Clip
+                                        )
+                                        if (!episode.overview.isNullOrBlank()) {
+                                            AndroidView(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                factory = { context ->
+                                                    TextView(context).apply {
+                                                        setTextColor(onBackgroundColor.toArgb())
+                                                        textSize = 12f
+                                                    }
+                                                },
+                                                update = { tv ->
+                                                    tv.text = HtmlCompat.fromHtml(
+                                                        episode.overview!!,
+                                                        HtmlCompat.FROM_HTML_MODE_LEGACY
+                                                    )
+                                                }
+                                            )
+                                        }
+                                    }
+
+                                    Box(
+                                        modifier = Modifier
+                                            .align(Alignment.BottomCenter)
+                                            .fillMaxWidth()
+                                            .height(24.dp)
+                                            .background(
+                                                Brush.verticalGradient(
+                                                    colors = listOf(
+                                                        Color.Transparent,
+                                                        CardDefaults.cardColors().containerColor
+                                                    )
                                                 )
                                             )
-                                        )
-                                )
+                                    )
+                                }
                             }
                         }
                     }
